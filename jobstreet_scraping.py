@@ -31,7 +31,7 @@ class JobStreetSpider(scrapy.Spider):
         # Determine number of pages
         pagination = response.css("select#pagination>option::attr(value)").extract()  
         # loop ever pages
-        for page in range(1, int(pagination[1])): 
+        for page in range(1, int(pagination[10])): 
             page_url = f"https://www.jobstreet.com.ph/en/job-search/{keyword}-jobs-in-{location}/{page}/"
             yield scrapy.Request(url=page_url, callback=self.parse_page_result, dont_filter=True)
         # dont_filter - The class used to detect and filter duplicate requests. 
@@ -39,41 +39,49 @@ class JobStreetSpider(scrapy.Spider):
 
     def parse_page_result(self, response):
         """Parsing Each Job link"""
-        job_link = response.xpath("//h1[contains(@class, 'sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc3 _18qlyvca')]/a/@href").extract()
+
+        # Getting the each job post link
+        job_link = response.xpath("//div[@class='sx2jih0 zcydq876 zcydq866 zcydq896 zcydq886 zcydq8n zcydq856 zcydq8f6 zcydq8eu']/div//h1/a/@href").extract()
+        
         # Loop thru each pages
         for link in job_link:
             url = f"https://www.jobstreet.com.ph{link}"
-            time.sleep(1) # To Prevent Request time error
+            time.sleep(2) # To Prevent Request time error
             yield scrapy.Request(url=url, callback=self.parse_jobpage, meta={'link': url})
         
         
     def parse_jobpage(self, response):
         """ Parsing the jobpage and fetch result"""
-        divpath = "div[@class='sx2jih0 zcydq86a']"  # Creating Short path for div
+        divpath = "//div[@class='sx2jih0 zcydq898 zcydq8a2 zcydq888 zcydq892']/div/div/div/div/div"  # Creating Short path for div
 
         # ============= PARAMETERS NEEDED ============
         # Job Title
-        job_title = response.xpath("//h1[contains(@class, 'sx2jih0 _18qlyvc0 _18qlyvch _1d0g9qk4 _18qlyvcp _18qlyvc1x')]/text()").extract_first()
+        job_title = response.xpath(f"{divpath}/div/div/div/h1/text()").extract_first()
         
         # Company Name
-        company = response.xpath("//div[@class='sx2jih0 zcydq86m']/span/text()").extract_first()
+        company = response.xpath(f"{divpath}/div/div/div/span/text()").extract_first()
         
         # Job Location
-        location = response.xpath(f"//{divpath}/div[@class='sx2jih0 zcydq856']/span/text()").extract_first()
-        if location is None:
-            location = response.xpath(f"//{divpath}/div/div/div[@class='sx2jih0 zcydq86i zcydq87i mFVxF']/span/text()").extract()
+        location = response.xpath(f"{divpath}//div[@class='sx2jih0 zcydq856']/span/text()").extract()
+        if len(location) > 1 or len(location) == 0: 
+            # Multiple Locations
+            location = response.xpath(f"{divpath}//div[@class='sx2jih0 zcydq856']//div[@class='sx2jih0 zcydq86i zcydq87i mFVxF']//span/text()").extract()
+        else:
+            # Signle Location
+            location = location[0]
         
         
-        # Determining Date or salary(DOS)
+        # Determining Date Or Salary(DOS)
+        dos = response.xpath(f"{divpath}//div[@class='sx2jih0 zcydq86a']")
+
         # Salary and Date Posted
-        dos = response.xpath(f"//{divpath}/span[@class='sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc1 _18qlyvca']/text()").extract()
-        if len(dos) == 2:
-            salary = dos[0]
-            raw_date = dos[1]
+        if len(dos) > 2:
+            salary = dos.xpath(".//text()").extract()[-2] 
+            raw_date = dos.xpath(".//text()").extract()[-1]
         else: 
             # If Salary is not available
             salary = None
-            raw_date = dos[0]
+            raw_date = dos.xpath(".//text()").extract()[-1] 
         
         # Fix format Date
         split_date = raw_date.split(" ")

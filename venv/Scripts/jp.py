@@ -1,4 +1,4 @@
-#!D:\Pokgi\DataCamp\General-VS-Code\job_seeker\venv\Scripts\python.exe
+#!D:\Pokgi\DataCamp\General-VS-Code\jobstreet_scraping\venv\Scripts\python.exe
 
 import sys
 import json

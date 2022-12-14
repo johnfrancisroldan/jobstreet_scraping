@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="D:\Pokgi\DataCamp\General-VS-Code\job_seeker\venv"
+VIRTUAL_ENV="D:\Pokgi\DataCamp\General-VS-Code\jobstreet_scraping\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
